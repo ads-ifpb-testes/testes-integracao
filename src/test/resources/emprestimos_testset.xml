@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dataset>
+    <livro id="1" nome="Como quebrar software" />
+    <livro id="2" nome="Agile Testing" />
+    <emprestimo id="1" id_livro="1" data_inicio="2019-01-28" data_prevista_fim="2019-01-30" data_fim="2019-01-30"/>
+    <emprestimo id="2" id_livro="1" data_inicio="2019-02-02" data_prevista_fim="2019-02-04" data_fim="2019-02-04"/>
+</dataset>
