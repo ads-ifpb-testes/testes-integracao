@@ -16,9 +16,12 @@ public class ServicoEmprestimoImpl implements ServicoEmprestimo {
 
     public void emprestar(Livro livro) throws EmprestimoException {
         List<Emprestimo> emprestimos = repositorioEmprestimo.listarAtivos();
-        Optional<Emprestimo> emprestimoExistente = emprestimos.stream()
-                .filter(x -> livro.getNome().equals(x.getLivro().getNome())).findFirst();
-        if(emprestimoExistente.isPresent()) {
+        boolean existeEmprestimo = false;
+        for (Emprestimo emprestimo : emprestimos) {
+            if(emprestimo.getLivro().getNome().equals(livro.getNome()))
+                existeEmprestimo = true;
+        }
+        if(existeEmprestimo) {
             throw new EmprestimoException("Livro já está emprestado");
         }
         Emprestimo emprestimo = new Emprestimo(livro, LocalDate.now(), LocalDate.now().plusDays(5));

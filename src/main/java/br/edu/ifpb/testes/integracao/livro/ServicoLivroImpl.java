@@ -16,6 +16,14 @@ public class ServicoLivroImpl implements ServicoLivro {
             throw new LivroInvalidoException("Livro não pode ser nulo!");
         if(livro.getNome() == null || livro.getNome().length() > 80)
             throw new LivroInvalidoException("Livro deve conter nome e ser menor que 80 caracteres");
+        List<Livro> livrosExistentes = repositorioLivro.listarTodos();
+        boolean jaExiste = false;
+        for (Livro livrosExistente : livrosExistentes) {
+            if(livrosExistente.getNome().equals(livro.getNome()))
+                jaExiste = true;
+        }
+        if(jaExiste)
+            throw new LivroInvalidoException("Esse livro já existe");
         this.repositorioLivro.salvar(livro);
     }
 
@@ -26,6 +34,6 @@ public class ServicoLivroImpl implements ServicoLivro {
 
     @Override
     public List<Livro> listar() {
-        return null;
+        return this.repositorioLivro.listarTodos();
     }
 }

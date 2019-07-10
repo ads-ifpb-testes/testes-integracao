@@ -1,39 +1,53 @@
 package br.edu.ifpb.testes.integracao.livro;
 
 import br.edu.ifpb.testes.integracao.GenericDatabaseTestCase;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.dbunit.IDatabaseTester;
+import org.dbunit.JdbcDatabaseTester;
+import org.dbunit.dataset.DataSetException;
+import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
+import org.dbunit.operation.DatabaseOperation;
+import org.junit.*;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import static org.junit.Assert.*;
 
-public class ServicoLivroTest extends GenericDatabaseTestCase {
+public class ServicoLivroTest {
 
     private ServicoLivro servicoLivro;
-//    private JdbcDatabaseContainer container;
-//    private Connection conexao;
+    private JdbcDatabaseContainer container;
+    private Connection conexao;
+    private IDatabaseTester databaseTester;
 
     @Before
-    public void setUp() throws SQLException {
-//        if(container == null) {
-//            PostgreSQLContainer postgreSQLContainer;
-//            postgreSQLContainer = new PostgreSQLContainer().withUsername("postgresql").withPassword("123456").withDatabaseName("exemplo-testes");
-////            getClass().getResource("/postgres/create_schema.sql");
-//            container = postgreSQLContainer.withInitScript("postgres/create_schema.sql");
-//            container.start();
-//            conexao = DriverManager.getConnection(container.getJdbcUrl(), "postgresql", "123456");
-//        }
-//        RepositorioLivro repositorioLivro = new RepositorioLivroImpl(conexao);
-
-        RepositorioLivro repositorioLivro = new RepositorioLivroImpl();
+    public void setUp() throws Exception {
+        if(container == null) {
+            PostgreSQLContainer postgreSQLContainer;
+            postgreSQLContainer = new PostgreSQLContainer().withUsername("postgresql").withPassword("123456").withDatabaseName("exemplo-testes");
+            container = postgreSQLContainer.withInitScript("postgres/create_schema.sql");
+            container.start();
+            conexao = DriverManager.getConnection(container.getJdbcUrl(), "postgresql", "123456");
+        }
+        configureDBUnit();
+        this.databaseTester.onSetup();
+        RepositorioLivro repositorioLivro = new RepositorioLivroImpl(conexao);
         this.servicoLivro = new ServicoLivroImpl(repositorioLivro);
+    }
+
+    private void configureDBUnit() throws DataSetException, FileNotFoundException, ClassNotFoundException {
+        IDataSet dataSet = new FlatXmlDataSetBuilder().build(new FileInputStream(("src/test/resources/livros_testset.xml")));
+        this.databaseTester = new JdbcDatabaseTester("org.postgresql.Driver",
+                container.getJdbcUrl(), "postgresql", "123456");
+        this.databaseTester.setDataSet(dataSet);
+        this.databaseTester.setSetUpOperation(DatabaseOperation.INSERT);
+        this.databaseTester.setTearDownOperation(DatabaseOperation.DELETE);
     }
 
     @Test
@@ -43,6 +57,12 @@ public class ServicoLivroTest extends GenericDatabaseTestCase {
         Livro livroRegistrado = servicoLivro.consultar("Como quebrar um software");
         assertNotNull(livroRegistrado);
         assertNotNull(livroRegistrado.getId());
+    }
+
+    @Test(expected = LivroInvalidoException.class)
+    public void livroJaExistente() throws LivroInvalidoException {
+        Livro livro = new Livro("How to Break Software");
+        servicoLivro.salvar(livro);
     }
 
     @Test(expected = LivroInvalidoException.class)
@@ -63,13 +83,9 @@ public class ServicoLivroTest extends GenericDatabaseTestCase {
         servicoLivro.salvar(livro);
     }
 
-//    @After
-//    public void tearDown() throws SQLException {
-//        conexao.close();
-//    }
-
-    @Override
-    public String getDataSetFile() {
-        return "src/test/resources/emprestimos_testset.xml";
+    @After
+    public void tearDown() throws Exception {
+        databaseTester.onTearDown();
+        conexao.close();
     }
 }

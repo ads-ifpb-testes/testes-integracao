@@ -32,7 +32,7 @@ public class RepositorioLivroImpl implements RepositorioLivro {
 
     @Override
     public List<Livro> listarTodos() {
-        String query = "SELECT * nome FROM livro";
+        String query = "SELECT * FROM livro";
         return processQuery(query);
     }
 
